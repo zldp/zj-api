@@ -17,7 +17,7 @@ public class _MappingKit {
 	
 	public static void mapping(ActiveRecordPlugin arp) {
 		// Composite Primary Key order: ID,ID
-		arp.addMapping("病人医嘱记录", "ID,ID", 病人医嘱记录.class);
+		//arp.addMapping("病人医嘱记录", "ID,ID", 病人医嘱记录.class);
 	}
 }
 
