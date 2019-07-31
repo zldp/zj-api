@@ -16,7 +16,8 @@ import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
 public class _MappingKit {
 	
 	public static void mapping(ActiveRecordPlugin arp) {
-		arp.addMapping("user", "user_id", User.class);
+		// Composite Primary Key order: ID,ID
+		arp.addMapping("病人医嘱记录", "ID,ID", 病人医嘱记录.class);
 	}
 }
 

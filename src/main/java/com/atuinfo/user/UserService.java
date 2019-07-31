@@ -1,10 +1,13 @@
 package com.atuinfo.user;
 
 import com.atuinfo.common.model.User;
+import com.jfinal.aop.Before;
 import com.jfinal.plugin.activerecord.Page;
+import com.jfinal.plugin.activerecord.tx.Tx;
 
 import java.util.List;
 
+@Before(Tx.class)
 public class UserService {
 
     private User userDao = new User().dao();

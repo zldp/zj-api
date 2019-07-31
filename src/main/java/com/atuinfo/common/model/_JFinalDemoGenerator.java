@@ -2,7 +2,7 @@ package com.atuinfo.common.model;
 
 import com.atuinfo.common.DemoConfig;
 import com.jfinal.kit.PathKit;
-import com.jfinal.plugin.activerecord.dialect.MysqlDialect;
+import com.jfinal.plugin.activerecord.dialect.OracleDialect;
 import com.jfinal.plugin.activerecord.generator.Generator;
 import com.jfinal.plugin.druid.DruidPlugin;
 
@@ -35,18 +35,23 @@ public class _JFinalDemoGenerator {
 		
 		// 创建生成器
 		Generator generator = new Generator(getDataSource(), baseModelPackageName, baseModelOutputDir, modelPackageName, modelOutputDir);
-		
+		//添加需要生成的表名
+		MyMetaBulider metaBulider = new MyMetaBulider(getDataSource());
+		//数据库表名包含字段（可以是数据库全名，否则所有包含字段的表都将生成）
+		metaBulider.setTablePrefix("病人医嘱记录");
+		generator.setMetaBuilder(metaBulider);
+
 		// 配置是否生成备注
 		//generator.setGenerateRemarks(false);
 		
 		// 设置数据库方言
-		generator.setDialect(new MysqlDialect());
+		generator.setDialect(new OracleDialect());
 		
 		// 设置是否生成链式 setter 方法
 		generator.setGenerateChainSetter(false);
 		
 		// 添加不需要生成的表名
-		generator.addExcludedTable("adv");
+		//generator.addExcludedTable("adv");
 		
 		// 设置是否在 Model 中生成 dao 对象
 		generator.setGenerateDaoInModel(false);
@@ -59,7 +64,9 @@ public class _JFinalDemoGenerator {
 		
 		// 生成
 		generator.generate();
+
 	}
+
 }
 
 

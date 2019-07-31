@@ -2,17 +2,16 @@ package com.atuinfo.common;
 
 
 import com.atuinfo.Interceptors.ExceptionInterceptor;
-import com.atuinfo.Interceptors.SignInterceptor;
 import com.atuinfo.common.model._MappingKit;
-import com.atuinfo.routes.IndexRoutes;
-import com.atuinfo.routes.UserRoutes;
+import com.atuinfo.routes.*;
 import com.jfinal.config.*;
 import com.jfinal.json.JacksonFactory;
 import com.jfinal.kit.Prop;
 import com.jfinal.kit.PropKit;
 import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
+import com.jfinal.plugin.activerecord.CaseInsensitiveContainerFactory;
+import com.jfinal.plugin.activerecord.dialect.OracleDialect;
 import com.jfinal.plugin.druid.DruidPlugin;
-import com.jfinal.render.ViewType;
 import com.jfinal.server.undertow.UndertowServer;
 import com.jfinal.template.Engine;
 
@@ -51,10 +50,10 @@ public class DemoConfig extends JFinalConfig {
 		loadConfig();
 		
 		me.setDevMode(p.getBoolean("devMode", false));
-		
 		// 支持 Controller、Interceptor 之中使用 @Inject 注入业务层，并且自动实现 AOP
+		me.setInjectDependency(true);
 		//支持jsp模板
-		me.setViewType(ViewType.JSP);
+		//me.setViewType(ViewType.JSP);
 
 
 		me.setJsonFactory(new JacksonFactory());
@@ -66,9 +65,9 @@ public class DemoConfig extends JFinalConfig {
 	 * 配置路由
 	 */
 	public void configRoute(Routes me) {
+		me.add(new IndexRoutes());
 		//配置访问路由
-		me.add(new IndexRoutes());//index的路由
-		me.add(new UserRoutes());//user的路由
+
 	}
 
 
@@ -81,24 +80,41 @@ public class DemoConfig extends JFinalConfig {
 	 * 配置插件
 	 */
 	public void configPlugin(Plugins me) {
+		ActiveRecordPlugin arp = null;
+		String driver=p.get("driver");
+		String url=p.get("jdbcUrl");
+		String username=p.get("user");
+		String password=p.get("password");
+
 		// 配置 druid 数据库连接池插件
-		DruidPlugin druidPlugin = new DruidPlugin(p.get("jdbcUrl"), p.get("user"), p.get("password").trim(),PropKit.get("driverClass"));
+		DruidPlugin druidPlugin = new DruidPlugin(url, username, password, driver);
 		me.add(druidPlugin);
 
-
-
 		// 配置ActiveRecord插件
-		ActiveRecordPlugin arp = new ActiveRecordPlugin(druidPlugin);
+		arp=new ActiveRecordPlugin(druidPlugin);//设置数据库方言
+		arp.setDialect(new OracleDialect());
+		arp.setContainerFactory(new CaseInsensitiveContainerFactory(true));//false 是大写, true是小写, 不写是区分大小写
+		//me.add(new EhCachePlugin());  后期再增加缓存插件
+
+
+
+		//arp = new ActiveRecordPlugin(druidPlugin);
 		// 所有映射在 MappingKit 中自动化搞定
 		_MappingKit.mapping(arp);
 
 		me.add(arp);
 	}
-	
+
+	/**
+	 * 用户generator插件进行数据库初始化
+	 * @data 2019-3-28
+	 * @autho dp
+	 * @return
+	 */
 	public static DruidPlugin createDruidPlugin() {
 		loadConfig();
 		
-		return new DruidPlugin(p.get("jdbcUrl"), p.get("user"), p.get("password").trim());
+		return new DruidPlugin(p.get("jdbcUrl"), p.get("user"), p.get("password").trim(),p.get("driver"));
 	}
 	
 	/**
