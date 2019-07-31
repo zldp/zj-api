@@ -1,0 +1,6 @@
+# config
+jdbcUrl = jdbc:mysql://127.0.0.1:3306/jfinal?useSSL=false&useUnicode=true&characterEncoding=UTF-8
+user = root
+password =123
+devMode = true
+secret = zlsoft
