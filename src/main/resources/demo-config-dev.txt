@@ -1,6 +1,7 @@
 # config
-jdbcUrl = jdbc:mysql://127.0.0.1:3306/jfinal?useSSL=false&useUnicode=true&characterEncoding=UTF-8
-user = root
-password =123
+driver = oracle.jdbc.driver.OracleDriver
+jdbcUrl = jdbc:oracle:thin:@192.168.0.201:1521:orcl
+user = zlhis
+password = HIS
 devMode = true
 secret = zlsoft
