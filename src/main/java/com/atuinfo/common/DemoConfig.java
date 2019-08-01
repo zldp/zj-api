@@ -3,6 +3,7 @@ package com.atuinfo.common;
 
 import com.atuinfo.Interceptors.ExceptionInterceptor;
 import com.atuinfo.common.model._MappingKit;
+import com.atuinfo.controller.BookingController;
 import com.atuinfo.routes.*;
 import com.jfinal.config.*;
 import com.jfinal.json.JacksonFactory;
@@ -66,6 +67,8 @@ public class DemoConfig extends JFinalConfig {
 	 */
 	public void configRoute(Routes me) {
 		me.add(new IndexRoutes());
+		me.add("/booking", BookingController.class);
+
 		//配置访问路由
 
 	}
