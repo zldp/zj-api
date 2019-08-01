@@ -5,6 +5,7 @@ import com.atuinfo.service.BookingService;
 import com.jfinal.aop.Before;
 import com.jfinal.aop.Inject;
 import com.jfinal.core.Controller;
+import com.jfinal.kit.HttpKit;
 
 /**
  * @author dp
@@ -17,7 +18,8 @@ public class BookingController extends Controller {
     private BookingService bookingService;
 
     public void index(){
+        String strRequest = HttpKit.readData(getRequest());
         // 调用方法直接返回
-        renderText(bookingService.cancelBook(""));
+        renderText(bookingService.cancelBook(strRequest));
     }
 }

@@ -1,9 +1,13 @@
 package com.atuinfo.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.atuinfo.exception.ErrorMassageException;
 import com.jfinal.aop.Before;
 import com.jfinal.kit.StrKit;
 import com.jfinal.plugin.activerecord.tx.Tx;
+
+import java.util.Map;
 
 /**
  * @author dp
@@ -13,9 +17,15 @@ import com.jfinal.plugin.activerecord.tx.Tx;
 @Before(Tx.class)
 public class BookingService {
     public String cancelBook(String strRequest){
+        Map<String, Object> result = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {
+        });
+
         // 用来判断属性是不是为空
-        if (StrKit.isBlank(strRequest)) {
-            throw new ErrorMassageException("strRequest不能为空");
+        if (null==result.get("account")) {
+            throw new ErrorMassageException("account不能为空");
+        }
+        if (null == result.get("password")) {
+            throw new ErrorMassageException("password不能为空");
         }
         /**
          * 逻辑代码
