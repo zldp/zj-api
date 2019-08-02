@@ -17,9 +17,21 @@ public class BookingController extends Controller {
     @Inject
     private BookingService bookingService;
 
+    /**
+     * 取消预约
+     */
     public void index(){
         String strRequest = HttpKit.readData(getRequest());
         // 调用方法直接返回
         renderText(bookingService.cancelBook(strRequest));
+    }
+
+
+    /**
+     * 预约取号
+     */
+    public void BookingGetNo(){
+        String strRequest = HttpKit.readData(getRequest());
+        renderText(bookingService.bookingGetNo(strRequest));
     }
 }

@@ -70,7 +70,6 @@ public class DemoConfig extends JFinalConfig {
 		me.add("/booking", BookingController.class);
 
 		//配置访问路由
-
 	}
 
 
