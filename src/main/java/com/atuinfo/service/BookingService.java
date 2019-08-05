@@ -3,6 +3,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.atuinfo.common.ExecPublic;
 import com.atuinfo.common.Initiation;
+import com.atuinfo.common.StrUtil;
 import com.atuinfo.common.UserInfo;
 import com.atuinfo.exception.ErrorMassageException;
 import com.jfinal.aop.Before;
@@ -33,8 +34,8 @@ public class BookingService {
      */
     public Map cancelBook(String strRequest){
         Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
-        final String thirdPartyNo = params.get("thirdPartyNo") == null ? "" : params.get("thirdPartyNo").toString();
-        final String bookingOrderId = params.get("bookingOrderId") == null ? "" : params.get("bookingOrderId").toString();
+        final String thirdPartyNo = StrUtil.objToStr(params.get("thirdPartyNo"));
+        final String bookingOrderId = StrUtil.objToStr(params.get("bookingOrderId"));
         if (StrKit.isBlank(bookingOrderId)) {
             throw new ErrorMassageException("bookingOrderId 不能为空");
         }
@@ -103,11 +104,14 @@ public class BookingService {
 
         //获取前台传过来的参数
         Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
-        final String bookingOrderId= String.valueOf(params.get("bookingOrderId"));//预约单编号
-        final String thirdPartyNo=String.valueOf(params.get("thirdPartyNo"));  //第三方支付流水号
-        final String outTradeNo=String.valueOf(params.get("outTradeNo"));   //业务订单号
-        final String payFee=String.valueOf(params.get("payFee"));//     挂号：支付费用
-        final String tradeType=String.valueOf(params.get("tradeType"));//支付方式
+        final String bookingOrderId = StrUtil.objToStr(params.get("bookingOrderId"));//预约单编号
+        final String thirdPartyNo = StrUtil.objToStr(params.get("thirdPartyNo"));  //第三方支付流水号
+        final String outTradeNo = StrUtil.objToStr(params.get("outTradeNo"));   //业务订单号
+        final String payFee = StrUtil.objToStr(params.get("payFee"));//     挂号：支付费用
+        final String tradeType = StrUtil.objToStr(params.get("tradeType"));//支付方式
+        if (StrKit.isBlank(bookingOrderId)) {
+
+        }
 
         // 判断三方返回的费用与总费用是否相等
         final List<Record> recordList=Db.find("  Select 病人ID,nvl(sum(实收金额),0) as 金额 From 门诊费用记录 Where NO=? and 记录性质=4 group by 病人id",bookingOrderId);

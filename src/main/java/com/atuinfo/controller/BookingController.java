@@ -30,8 +30,9 @@ public class BookingController extends Controller {
     /**
      * 预约取号
      */
-    public void BookingGetNo(){
+    public void bookingGetNo(){
         String strRequest = HttpKit.readData(getRequest());
+
         renderText(bookingService.bookingGetNo(strRequest));
     }
 }
