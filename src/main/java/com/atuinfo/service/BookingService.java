@@ -6,6 +6,7 @@ import com.atuinfo.common.Initiation;
 import com.atuinfo.common.UserInfo;
 import com.atuinfo.exception.ErrorMassageException;
 import com.jfinal.aop.Before;
+import com.jfinal.kit.StrKit;
 import com.jfinal.plugin.activerecord.*;
 import com.jfinal.plugin.activerecord.tx.Tx;
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,9 +31,13 @@ public class BookingService {
      * @param strRequest
      * @return
      */
-    public String cancelBook(String strRequest){
-        Map<String, Object> result = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
-        final String bookingOrderId= String.valueOf(result.get("bookingOrderId"));
+    public Map cancelBook(String strRequest){
+        Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
+        final String thirdPartyNo = params.get("thirdPartyNo") == null ? "" : params.get("thirdPartyNo").toString();
+        final String bookingOrderId = params.get("bookingOrderId") == null ? "" : params.get("bookingOrderId").toString();
+        if (StrKit.isBlank(bookingOrderId)) {
+            throw new ErrorMassageException("bookingOrderId 不能为空");
+        }
         //判断当前号源是否存在
         final List<Record> recordList=Db.find(" Select A.诊室,A.门诊号,A.姓名,A.性别,A.年龄,B.费别,C.编码 As 付款方式,发生时间,号序\n" + "  From 病人挂号记录 A,病人信息 B,医疗付款方式 C\n" +
                 "\tWhere A.病人ID=B.病人ID And B.医疗付款方式=C.名称 and A.No=? and A.预约=1 And A.记录性质=2 and A.记录状态=1",bookingOrderId);
@@ -48,33 +54,41 @@ public class BookingService {
         Db.execute(new ICallback() {
             @Override
             public Object call(Connection conn) throws SQLException {
-                List<Record> result = null ;
-                ResultSet rs = null;
-                try {
-
-                    CallableStatement proc = conn.prepareCall("{Call Zl_三方机构挂号_Delete (?,?)}");
+                    CallableStatement proc = conn.prepareCall("{Call Zl_三方机构挂号_Delete (?,?,?,?,?)}");
                     proc.setString(1, bookingOrderId);
-                    proc.setString(2,"取消预约");
+                    proc.setString(2, thirdPartyNo);
+                    proc.setString(3,"取消预约");
+                    proc.setString(4,null);
+                    proc.setString(5,null);
 
-                    rs = proc.executeQuery();
-                    result = RecordBuilder.me.build(DbKit.getConfig(), rs);;
-                } catch (SQLException e) {
-                    e.getErrorCode();
-                    throw new ErrorMassageException("执行Zl_三方机构挂号_Delete存储过程错误");
-                }
-                return result;
+                     proc.execute();
+                    //params = RecordBuilder.me.build(DbKit.getConfig(), rs);
+                    //代码来到这里就说明你的存储过程已经调用成功，如果有输出参数，接下来就是取输出参数的一个过程
+                    /*Record record = new Record();
+                    //国税有税源无
+                    record.set("GSYSYW",proc.getObject(1));
+                    //国税无税源有
+                    record.set("GSWSYY",proc.getObject(2));
+                    //识别号不同名称相同
+                    record.set("SBHBTMCT",proc.getObject(3));
+                    //识别号相同名称不同
+                    record.set("SBHTMCBT",proc.getObject(4));
+                    //识别号名称都相同
+                    record.set("SBHMCXT",proc.getObject(5));
+                    //setAttr("Count",record);
+                    return proc;*/
+                return null;
             }
         });
         /**
          * 逻辑代码
          */
         // 返回结果集
-        String strResponse = "" +
-                "<Response>\n" +
-                "    <ReturnCode>0</ReturnCode>\n" +
-                "    <ReturnInfo>预约取消（OutPatBookingCancel）交易成功！</ReturnInfo>" +
-                "\n</Response>";
-        return strResponse;
+        Map result = new HashMap();
+        result.put("returnCode", 0);
+        result.put("returnInfo", "成功");
+
+        return result;
     }
 
     /**
@@ -88,12 +102,12 @@ public class BookingService {
         String strRem = "";
 
         //获取前台传过来的参数
-        Map<String, Object> result = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
-        final String bookingOrderId= String.valueOf(result.get("bookingOrderId"));//预约单编号
-        final String thirdPartyNo=String.valueOf(result.get("thirdPartyNo"));  //第三方支付流水号
-        final String outTradeNo=String.valueOf(result.get("outTradeNo"));   //业务订单号
-        final String payFee=String.valueOf(result.get("payFee"));//     挂号：支付费用
-        final String tradeType=String.valueOf(result.get("tradeType"));//支付方式
+        Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
+        final String bookingOrderId= String.valueOf(params.get("bookingOrderId"));//预约单编号
+        final String thirdPartyNo=String.valueOf(params.get("thirdPartyNo"));  //第三方支付流水号
+        final String outTradeNo=String.valueOf(params.get("outTradeNo"));   //业务订单号
+        final String payFee=String.valueOf(params.get("payFee"));//     挂号：支付费用
+        final String tradeType=String.valueOf(params.get("tradeType"));//支付方式
 
         // 判断三方返回的费用与总费用是否相等
         final List<Record> recordList=Db.find("  Select 病人ID,nvl(sum(实收金额),0) as 金额 From 门诊费用记录 Where NO=? and 记录性质=4 group by 病人id",bookingOrderId);

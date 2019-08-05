@@ -1,6 +1,7 @@
 package com.atuinfo.Interceptors;
 
 import com.atuinfo.core.Result;
+import com.atuinfo.core.ResultGenerator;
 import com.atuinfo.exception.ErrorMassageException;
 import com.jfinal.aop.Interceptor;
 import com.jfinal.aop.Invocation;
@@ -17,13 +18,9 @@ public class ErrorExptionInterceptor implements Interceptor {
         try {
             invocation.invoke();
         } catch (ErrorMassageException e) {
-            e.printStackTrace();
-            String strResponse = "" +
-                    "<Response>\n" +
-                    "    <ReturnCode>1</ReturnCode>\n" +
-                    "    <ReturnInfo>"+e.getMessage()+"</ReturnInfo>\n" +
-                    "</Response>";
-            invocation.getController().renderText(strResponse);
+            //e.printStackTrace();
+
+            invocation.getController().renderJson(ResultGenerator.genFailResult(e.getMessage()));
         }
 
     }

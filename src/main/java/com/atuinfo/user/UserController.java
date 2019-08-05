@@ -8,6 +8,7 @@ import com.jfinal.aop.Inject;
 import com.jfinal.core.Controller;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Before(UserInterceptor.class)
@@ -21,7 +22,7 @@ public class UserController extends Controller {
         for(int i = 0 ;i < ls.size() ;i++){
             System.out.println(ls.get(i));
         }
-        Result result = ResultGenerator.genSuccessResult();
+        Map result = ResultGenerator.genSuccessResult();
         renderJson(result);
     }
 

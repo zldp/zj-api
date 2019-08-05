@@ -23,7 +23,7 @@ public class BookingController extends Controller {
     public void index(){
         String strRequest = HttpKit.readData(getRequest());
         // 调用方法直接返回
-        renderText(bookingService.cancelBook(strRequest));
+        renderJson(bookingService.cancelBook(strRequest));
     }
 
 
