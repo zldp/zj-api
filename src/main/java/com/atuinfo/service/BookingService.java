@@ -42,7 +42,7 @@ public class BookingService {
         final List<Record> recordList=Db.find(" Select A.诊室,A.门诊号,A.姓名,A.性别,A.年龄,B.费别,C.编码 As 付款方式,发生时间,号序\n" + "  From 病人挂号记录 A,病人信息 B,医疗付款方式 C\n" +
                 "\tWhere A.病人ID=B.病人ID And B.医疗付款方式=C.名称 and A.No=? and A.预约=1 And A.记录性质=2 and A.记录状态=1",bookingOrderId);
         //System.out.println(recordList.size());
-        if(recordList.size()==0&&recordList!=null){
+        if(recordList.size()==0){
             throw new ErrorMassageException("号源不存在");
         }
         List<Map<String, Object>> nursingRecords = new ArrayList<>();
