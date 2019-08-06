@@ -1,8 +1,10 @@
 package com.atuinfo.Interceptors;
 
 import com.atuinfo.core.Result;
+import com.atuinfo.core.ResultCode;
 import com.atuinfo.core.ResultGenerator;
 import com.atuinfo.exception.ErrorMassageException;
+import com.atuinfo.util.MapToXmlUtile;
 import com.jfinal.aop.Interceptor;
 import com.jfinal.aop.Invocation;
 import org.eclipse.jetty.http.HttpStatus;
@@ -20,7 +22,7 @@ public class ErrorExptionInterceptor implements Interceptor {
         } catch (ErrorMassageException e) {
             //e.printStackTrace();
 
-            invocation.getController().renderJson(ResultGenerator.genFailResult(e.getMessage()));
+            invocation.getController().renderText(MapToXmlUtile.mapToXml(ResultCode.FAIL, e.getMessage(), null));
         }
 
     }

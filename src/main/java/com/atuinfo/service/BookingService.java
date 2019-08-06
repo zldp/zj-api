@@ -5,7 +5,10 @@ import com.atuinfo.common.ExecPublic;
 import com.atuinfo.common.Initiation;
 import com.atuinfo.common.StrUtil;
 import com.atuinfo.common.UserInfo;
+import com.atuinfo.core.ResultCode;
 import com.atuinfo.exception.ErrorMassageException;
+import com.atuinfo.util.MapToXmlUtile;
+import com.atuinfo.util.StaxonUtils;
 import com.jfinal.aop.Before;
 import com.jfinal.kit.StrKit;
 import com.jfinal.plugin.activerecord.*;
@@ -27,13 +30,22 @@ import java.util.Map;
  */
 @Before(Tx.class)
 public class BookingService {
+
+    public Map<String,Object> FormatValidation(String strRequest){
+        Map<String, Object> params = (Map<String, Object>) JSONObject.parseObject(StaxonUtils.xml2json(strRequest), Map.class).get("Request");
+        if (null == params) {
+            throw new ErrorMassageException("格式错误,请参照文档以正确格式传参");
+        }
+        return  params;
+    }
     /**
      * 取消预约
      * @param strRequest
      * @return
      */
-    public Map cancelBook(String strRequest){
-        Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
+    public String cancelBook(String strRequest){
+        // 解析xml 得到参数
+        Map<String, Object> params = FormatValidation(strRequest);
         final String thirdPartyNo = StrUtil.objToStr(params.get("thirdPartyNo"));
         final String bookingOrderId = StrUtil.objToStr(params.get("bookingOrderId"));
         if (StrKit.isBlank(bookingOrderId)) {
@@ -55,6 +67,7 @@ public class BookingService {
         Db.execute(new ICallback() {
             @Override
             public Object call(Connection conn) throws SQLException {
+                try {
                     CallableStatement proc = conn.prepareCall("{Call Zl_三方机构挂号_Delete (?,?,?,?,?)}");
                     proc.setString(1, bookingOrderId);
                     proc.setString(2, thirdPartyNo);
@@ -62,7 +75,11 @@ public class BookingService {
                     proc.setString(4,null);
                     proc.setString(5,null);
 
-                     proc.execute();
+                    proc.execute();
+                } catch (SQLException e) {
+                    throw new ErrorMassageException("执行Call Zl_三方机构挂号_Delete存储过程错误");
+                }
+
                     //params = RecordBuilder.me.build(DbKit.getConfig(), rs);
                     //代码来到这里就说明你的存储过程已经调用成功，如果有输出参数，接下来就是取输出参数的一个过程
                     /*Record record = new Record();
@@ -85,11 +102,8 @@ public class BookingService {
          * 逻辑代码
          */
         // 返回结果集
-        Map result = new HashMap();
-        result.put("returnCode", 0);
-        result.put("returnInfo", "成功");
 
-        return result;
+        return MapToXmlUtile.mapToXml(ResultCode.SUCCESS, "成功", null);
     }
 
     /**

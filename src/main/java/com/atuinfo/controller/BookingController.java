@@ -21,10 +21,9 @@ public class BookingController extends Controller {
      * 取消预约
      */
     public void index(){
-        System.out.println("aaa");
         String strRequest = HttpKit.readData(getRequest());
         // 调用方法直接返回
-        renderJson(bookingService.cancelBook(strRequest));
+        renderText(bookingService.cancelBook(strRequest));
     }
 
 
