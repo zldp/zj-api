@@ -54,45 +54,44 @@ public class ExecPublic {
 //        btCommand cmd = new btCommand("");
 //        btDataReader dr = new btDataReader();
         try {
-            final List<Record> List= Db.find("Select * From 医疗卡类别 Where ID=?",0);
-            if (List.size()==0&&List!=null){
+            final Record List= Db.findFirst("Select * From 医疗卡类别 Where ID=?",intCardTypeID);
+            if (List==null){
                 throw new ErrorMassageException("未找到卡类别ID信息！请与软件供应商联系！");
             }
-            List<Map<String, Object>> Records = new ArrayList<>();
-            for (Record record : List) {
-                Map<String, Object> map = record.getColumns();
-                Records.add(map);
-            }
-            Map<String, Object> result = Records.get(0);
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", result.get("号序").toString());
-            map.put("coding", result.get("编码").toString());
-            map.put("name", result.get("名称").toString());
-            map.put("shortName", result.get("短名").toString());
-            map.put("assemblyUnit", result.get("部件").toString());
-            map.put("base", result.get("备注").toString());
-            map.put("partProject", result.get("特定项目").toString());
-            map.put("clearingForm", result.get("结算方式").toString());
-            map.put("cnCipher", result.get("卡号密文").toString());
 
-//          CardInfo.卡号长度 = Convert.ToInt16(btFunc.GetNum(dr.Get("卡号长度").ToString()));
-            map.put("cnLength", Func.GetNum(result.get("卡号长度").toString(),0));           //卡号长度 NUMBER(5)
-            map.put("qsLogo", Func.GetNum(result.get("缺省标志").toString(),0));            //缺省标志 NUMBER(1)
-            map.put("isFixed", Func.GetNum(result.get("是否固定").toString(),0));           //是否固定 NUMBER(1)
-            map.put("isExeControl", Func.GetNum(result.get("是否严格控制").toString(),0));    //是否严格控制 NUMBER(1)
-            map.put("isMadeByMyself", Func.GetNum(result.get("是否自制").toString(),0));        //是否自制 NUMBER(1)
-            map.put("isExist", Func.GetNum(result.get("是否存在帐户").toString(),0));         //是否存在帐户 NUMBER(1)
-            map.put("isRefund", Func.GetNum(result.get("是否退现").toString(),0));          //是否退现 NUMBER(1)
-            map.put("isFullyWithdraw", Func.GetNum(result.get("是否全退").toString(),0));   //是否全退 NUMBER(1)
-            map.put("isReuse", Func.GetNum(result.get("是否重复使用").toString(),0));     //是否重复使用 NUMBER(1)
-            map.put("isStartUsing", Func.GetNum(result.get("是否启用").toString(),0));  //是否启用 NUMBER(1)
-            map.put("pwdLength", Func.GetNum(result.get("密码长度").toString(),0));     //密码长度 NUMBER(2)
-            map.put("pwdLengthLimit", Func.GetNum(result.get("密码长度限制").toString(),0));//密码长度限制 NUMBER(2)
-            map.put("pwdRules", Func.GetNum(result.get("密码规则").toString(),0));//密码规则 NUMBER(2)
-            map.put("fuzzyOrNot", Func.GetNum(result.get("是否模糊查找").toString(),0));  //是否模糊查找 NUMBER(1)
-            map.put("pwdEntryRestriction", Func.GetNum(result.get("密码输入限制").toString(),0));//密码输入限制 NUMBER(1)
-            map.put("defaultPassword", Func.GetNum(result.get("是否缺省密码").toString(),0));//是否缺省密码 NUMBER(1)
-            map.put("riskClass", Func.GetNum(result.get("险类").toString(),0));//险类   NUMBER(3)
+            Map<String, Object> result = List.getColumns();
+            CardInfo.setP_intID((Integer) result.get("号序"));
+            CardInfo.setY_str编码(StrUtil.objToStr(result.get("编码")));
+            CardInfo.setY_str名称(StrUtil.objToStr(result.get("名称")));
+            CardInfo.setY_str短名(StrUtil.objToStr(result.get("短名")));
+            CardInfo.setY_str部件(StrUtil.objToStr(result.get("部件")));
+            CardInfo.setY_str备注(StrUtil.objToStr(result.get("备注")));
+            CardInfo.setY_str特定项目(StrUtil.objToStr(result.get("特定项目")));
+            CardInfo.setY_str结算方式(StrUtil.objToStr(result.get("结算方式")));
+            CardInfo.setY_str卡号密文(StrUtil.objToStr(result.get("卡号密文")));
+            CardInfo.setY_int卡号长度((Integer) result.get("卡号长度"));
+            CardInfo.setY_int缺省标志((Integer) result.get("缺省标志"));
+            CardInfo.setY_int是否固定((Integer) result.get("是否固定"));
+            CardInfo.setY_int是否严格控制((Integer) result.get("是否严格控制"));
+            CardInfo.setY_int是否自制((Integer) result.get("是否自制"));
+            CardInfo.setY_int是否存在帐户((Integer) result.get("是否存在帐户"));
+            CardInfo.setY_int是否退现((Integer) result.get("是否退现"));
+            CardInfo.setY_int是否全退((Integer) result.get("是否全退"));
+            CardInfo.setY_int是否重复使用((Integer) result.get("是否重复使用"));
+            CardInfo.setY_int是否启用((Integer) result.get("是否启用"));
+            CardInfo.setY_int密码长度((Integer) result.get("密码长度"));
+            CardInfo.setY_int密码长度限制((Integer) result.get("密码长度限制"));
+            CardInfo.setY_int密码规则((Integer) result.get("密码规则"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+            CardInfo.setY_int是否缺省密码((Integer) result.get("是否缺省密码"));
+            CardInfo.setY_int险类((Integer) result.get("险类"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+            CardInfo.setY_int是否模糊查找((Integer) result.get("是否模糊查找"));
+
+
         }catch (Exception e){
             //dr.Close();
             //cmd.Close();

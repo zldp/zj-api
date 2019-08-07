@@ -11,6 +11,7 @@ import com.jfinal.kit.Prop;
 import com.jfinal.kit.PropKit;
 import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
 import com.jfinal.plugin.activerecord.CaseInsensitiveContainerFactory;
+import com.jfinal.plugin.activerecord.Db;
 import com.jfinal.plugin.activerecord.dialect.OracleDialect;
 import com.jfinal.plugin.druid.DruidPlugin;
 import com.jfinal.server.undertow.UndertowServer;
@@ -43,7 +44,10 @@ public class DemoConfig extends JFinalConfig {
 			p = PropKit.use("demo-config-dev.txt").appendIfExists("atuinfo-config-pro.txt");
 		}
 	}
-	
+	public void afterJFinalStart(){
+		// 初始化HIS用户相关信息
+		License.getHisUserMessage();
+	}
 	/**
 	 * 配置常量
 	 */

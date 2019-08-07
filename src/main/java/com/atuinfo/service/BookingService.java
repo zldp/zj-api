@@ -14,11 +14,10 @@ import com.jfinal.kit.StrKit;
 import com.jfinal.plugin.activerecord.*;
 import com.jfinal.plugin.activerecord.tx.Tx;
 import java.math.BigDecimal;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,26 @@ public class BookingService {
             throw new ErrorMassageException("格式错误,请参照文档以正确格式传参");
         }
         return  params;
+    }
+
+
+    public Object execute(String sql){
+        return Db.execute(new ICallback() {
+            @Override
+            public Object call(Connection conn) {
+                try {
+                    CallableStatement proc = conn.prepareCall("{"+ sql +"}");
+
+                    proc.execute();
+                } catch (SQLException e) {
+                    throw new ErrorMassageException(e.getMessage());
+                }
+
+                return null;
+            }
+
+        });
+
     }
     /**
      * 取消预约
@@ -103,7 +122,7 @@ public class BookingService {
          */
         // 返回结果集
 
-        return MapToXmlUtile.mapToXml(ResultCode.SUCCESS, "成功", null);
+        return MapToXmlUtile.mapToXml(ResultCode.SUCCESS, "成功", null,false);
     }
 
     /**
@@ -117,7 +136,8 @@ public class BookingService {
         String strRem = "";
 
         //获取前台传过来的参数
-        Map<String, Object> params = JSONObject.parseObject(strRequest, new TypeReference<Map<String, Object>>() {});
+        // 解析xml 得到参数
+        Map<String, Object> params = FormatValidation(strRequest);
         final String bookingOrderId = StrUtil.objToStr(params.get("bookingOrderId"));//预约单编号
         final String thirdPartyNo = StrUtil.objToStr(params.get("thirdPartyNo"));  //第三方支付流水号
         final String outTradeNo = StrUtil.objToStr(params.get("outTradeNo"));   //业务订单号
@@ -128,66 +148,61 @@ public class BookingService {
         }
 
         // 判断三方返回的费用与总费用是否相等
-        final List<Record> recordList=Db.find("  Select 病人ID,nvl(sum(实收金额),0) as 金额 From 门诊费用记录 Where NO=? and 记录性质=4 group by 病人id",bookingOrderId);
-        if(recordList.size()==0&&recordList!=null){
+        final Record recordList=Db.findFirst("  Select 病人ID,nvl(sum(实收金额),0) as 金额 From 门诊费用记录 Where NO=? and 记录性质=4 group by 病人id",bookingOrderId);
+        if (recordList == null) {
             throw new ErrorMassageException("数据不存在");
         }
         //把查询的sql数据放进集合
-        List<Map<String, Object>> nursingRecords = new ArrayList<>();
-        for (Record record : recordList) {
-            Map<String, Object> map = record.getColumns();
-            nursingRecords.add(map);
-        }
+        Map<String, Object> nursingRecords = recordList.getColumns();
+
         //得到单个数据的值
-        String patientId=nursingRecords.get(0).get("病人id").toString();//病人ID
-        String sum= nursingRecords.get(0).get("金额").toString();//获取数据库的金额
+        String patientId = String.valueOf(nursingRecords.get("病人id"));//病人ID
+        String sum = String.valueOf(nursingRecords.get("金额"));//获取数据库的金额
         //将金额转换成金额类型
         BigDecimal MoneySum =  new BigDecimal(sum);    //数据库金额
         BigDecimal payFeeSum = new BigDecimal(payFee);//前台传递的金额
         // 如果两次金额不一致
-        if(MoneySum!=payFeeSum){
+        if(!MoneySum.equals(payFeeSum)){
             throw new ErrorMassageException("挂号金额合计与该号的价格不一致"); //提示错误
         }
         //获取病人预约信息
-        final List<Record> PatientInfoList=Db.find(" \n" +
+        final Record PatientInfoList=Db.findFirst(" \n" +
                 "Select A.号别,A.诊室,A.门诊号,A.姓名,A.性别,A.年龄,B.费别,nvl(C.编码,'09') As 付款方式,发生时间,号序,D.ID As" +
                 " 医生ID,D.姓名 As 医生姓名,A.执行部门ID As 科室ID From 病人挂号记录 A,病人信息 B,医疗付款方式 C,人员表 D " +
                 "Where A.病人ID=B.病人ID And B.医疗付款方式=C.名称 And A.No=? And A.预约=1 And A.记录性质=2 And 执行人=D.姓名",bookingOrderId);
         //接收数据
-        List<Map<String, Object>> Records = new ArrayList<>();
-        for (Record record : PatientInfoList) {
-            Map<String, Object> map = record.getColumns();
-            Records.add(map);
-        }
-        if(Records.size()==0){//判断是否有值
+        if (PatientInfoList == null) {//判断是否有值
             throw new ErrorMassageException("预约挂号单信息丢失或已经取号，请重新获取！");
         }
-        //取值  后续会调用到
-        String hb=Records.get(0).get("号别").toString();          //获取号别
-        long   doctorId= (long) Records.get(0).get("医生ID");  //医生ID
-        String startTime=Records.get(0).get("发生时间").toString();  //发生时间
-        String doctorName=Records.get(0).get("医生姓名").toString();  //医生姓名
-        long   departmentsId= (long) Records.get(0).get("科室ID");//科室ID
-        String consultingRoom=Records.get(0).get("诊室").toString();//诊室
-        String patientNumber=Records.get(0).get("门诊号").toString();//门诊号
-        String name=Records.get(0).get("姓名").toString();//姓名
-        String sex=Records.get(0).get("性别").toString();//性别
-        String age=Records.get(0).get("年龄").toString();//年龄
-        String payMethod=Records.get(0).get("付款方式").toString();//付款方式
-        String fb=Records.get(0).get("费别").toString();//费别
-        String hx=Records.get(0).get("号序").toString();//号序
+       Map<String, Object> Records = PatientInfoList.getColumns();
 
-        final List<Record> List=Db.find("Select 项目ID From 挂号安排 Where 号码=?",hb);
+
+        //取值  后续会调用到
+        String hb=Records.get("号别").toString();          //获取号别
+        long   doctorId= ((BigDecimal)Records.get("医生ID")).longValue();  //医生ID
+        Timestamp timestamp = PatientInfoList.getTimestamp("发生时间");
+        Date date = new Date(timestamp.getTime());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        String startTime= simpleDateFormat.format(date) ;  //发生时间
+        String doctorName = String.valueOf(Records.get("医生姓名"));  //医生姓名
+        long   departmentsId= ((BigDecimal) Records.get("科室ID")).longValue();//科室ID
+        String consultingRoom = String.valueOf(Records.get("诊室"));//诊室
+        String patientNumber = String.valueOf(Records.get("门诊号"));//门诊号
+        String name = String.valueOf(Records.get("姓名"));//姓名
+        String sex = String.valueOf(Records.get("性别"));//性别
+        String age = String.valueOf(Records.get("年龄"));//年龄
+        String payMethod = String.valueOf(Records.get("付款方式"));//付款方式
+        String fb = String.valueOf(Records.get("费别"));//费别
+        String hx = String.valueOf(Records.get("号序"));//号序
+
+        final Record List=Db.findFirst("Select 项目ID From 挂号安排 Where 号码=?",hb);
         //把查询的sql数据放进集合
-        List<Map<String, Object>> rs = new ArrayList<>();
-        for (Record record : List) {
-            Map<String, Object> map = record.getColumns();
-            rs.add(map);
-        }
-        if(rs.size()==0){
+        Map<String, Object> rs = List.getColumns();
+        if (List == null) {
             throw new ErrorMassageException("预约挂号单收费信息已作废，请重新挂号！");
         }
-        String ProjectId=Records.get(0).get("项目ID").toString();//项目ID
+        String ProjectId= String.valueOf(rs.get("项目ID"));//项目ID
 
         ExecPublic.InitCardInfo(ExecPublic.GetHisCardTypeID(tradeType));
         //事务开始
@@ -195,19 +210,17 @@ public class BookingService {
 //        blnTran = true;
 
         // 调用Zl_预约挂号接收_Insert全部以现金将病人进行接收。
-        final List<Record> List1=Db.find("Select 病人结帐记录_id.nextval From dual");
-        List<Map<String, Object>> rs1 = new ArrayList<>();
-        for (Record record : List1) {
-            Map<String, Object> map = record.getColumns();
-            rs1.add(map);
-        }
+        final Record List1=Db.findFirst("Select 病人结帐记录_id.nextval From dual");
+        Map<String, Object> rs1 = List1.getColumns();
+
         //结账ID
-        String NEXTVAL=rs1.get(0).get("nextval").toString();//病人结帐记录_id
+        String NEXTVAL = String.valueOf(rs1.get("nextval"));//病人结帐记录_id
         String strHISVERSION = Initiation.HISVERSION.trim();
 
 
        String strSql = "Call Zl_预约挂号接收_Insert(";
         //No
+
         strSql += "'" + bookingOrderId + "'";
         //实际票号
         strSql += ",NULL";
@@ -232,7 +245,7 @@ public class BookingService {
         //费别
         strSql += ",'" + fb + "'";
         //结算方式
-//        strSql += ",'" + ExecPublic.CardInfo.结算方式 + "'";
+        strSql += ",'" + ExecPublic.CardInfo.getY_str结算方式() + "'";
         //现金支付
         strSql += "," + payFeeSum;
         //预交支付
@@ -254,7 +267,7 @@ public class BookingService {
         //登记时间_In
         strSql += ",sysdate";
         //卡类别id_In
-//        strSql += "," + ExecPublic.CardInfo.ID;
+        strSql += "," + 12;
 //        //结算卡序号_In
         strSql += ",Null";
 //        //卡号_In
@@ -264,8 +277,8 @@ public class BookingService {
 //        //交易说明_In
         strSql += ",'" + strRem + "'";
         strSql += ")";
+        execute(strSql);
 
-        Db.find(strSql);
 
 
         //⑥ 调用zl_病人结算记录_update更新医保结算方式。若为三方支付传入三方支付信息。
@@ -284,20 +297,20 @@ public class BookingService {
                         "'" + str医保结算方式 + "',0,'" + ExecPublic.CardInfo.getP_intID() + "',0,'" + ExecPublic.CardInfo.getP_intID() + "',Null," +
                         "'" + thirdPartyNo + "','" + outTradeNo + "','" + strRem + "')";
             }
-            Db.find(strSql);
+           execute(strSql);
         }
 
         //强制保存挂号订单号到病人挂号记录的交易水号
         strSql = "Update 病人挂号记录" +
                 "    Set 交易流水号='" + outTradeNo + "',交易说明='" + strRem + "'" +
                 "    Where 记录性质 = 1 And 记录状态 = 1 And No='" + bookingOrderId + "'";
-        Db.find(strSql);
+        Db.update(strSql);
 
         //强制保存挂号订单号到病人预交记录的交易水号
         strSql = "Update 病人预交记录" +
                 "    Set 交易流水号='" + outTradeNo + "',交易说明='" + strRem + "'" +
                 "    Where 结帐id = " + NEXTVAL+ " And 卡类别ID=" + ExecPublic.CardInfo.getP_intID();
-        Db.find(strSql);
+        Db.update(strSql);
 
 
         //⑦ 调用Zl_病人挂号汇总_Update更新病人挂号汇总。
@@ -317,32 +330,15 @@ public class BookingService {
         //号码
         strSql += ",'" + hb + "'";
         strSql += ")";
-        Db.find(strSql);
+        execute(strSql);
 
 
-//        cmd.CommitTrans();
-//        blnTran = false;
-//        dr.Close();
-//        cmd.Close();
-//        strResponse = "" +
-//                "<Response>\n" +
-//                "    <ReturnCode>0</ReturnCode>\n" +
-//                "    <ReturnInfo>挂号取号（OutPatRegisteGetNo）交易成功！</ReturnInfo>" +
-//                strDetail +
-//                "\n</Response>";
-//        return strResponse;
-//    }
-//            catch (Exception se)
-//    {
-//        dr.Close();
-//        cmd.Close();
-//        btLogService.WriteErrorLog(se.ToString() + "\n" + strSql);
-//        strResponse = "<Response>\n" +
-//                "    <ReturnCode>1</ReturnCode>\n" +
-//                "    <ReturnInfo>" + btFunc.btSubstrCenter( se.Message.ToString()) + "</ReturnInfo>\n" +
-//                "</Response>";
 
-        return null;
+
+        Map result = new HashMap();
+        result.put("bookingOrderId", bookingOrderId);
+
+        return MapToXmlUtile.mapToXml(ResultCode.SUCCESS, "挂号取号（OutPatRegisteGetNo）交易成功！", result, false);
     }
 
 

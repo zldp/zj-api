@@ -22,16 +22,23 @@ public class MapToXmlUtile {
         return xml.toString();
     }
 
-    public static String mapToXml(int code, String message, Map<String, Object> params) {
+    public static String mapToXml(int code, String message, Map<String, Object> params,boolean ifList) {
         StringBuilder xml = new StringBuilder();
         xml.append("<Response>\n");
         xml.append("<returnCode>"+code+"</returnCode>\n");
         xml.append("<returnInfo>"+message+"</returnInfo>\n");
-        if (null != params) {
+
+        if (!ifList) {
             xml.append("<list>\n");
+        }
+        if (null != params) {
             xml.append(toXml((Map<String, Object>) params.get("TX_INFO")));
+        }
+        if (!ifList) {
             xml.append("</list>\n");
         }
+
+
         xml.append("</Response>");
         return xml.toString();
     }
